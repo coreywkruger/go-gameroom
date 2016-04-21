@@ -10,15 +10,17 @@ var memberList = make(map[string]*Member)
 // Member -
 type Member struct {
   ID string
+  WS *Connection
 }
 
 // RegisterMember -
-func RegisterMember(id string) error {
+func RegisterMember(id string, c *Connection) (*Member, error) {
   log.Println("registering ", id)
   memberList[id] = &Member{
     ID: id,
+    WS: c,
   }
-  return nil
+  return memberList[id], nil
 }
 
 // GetMember -

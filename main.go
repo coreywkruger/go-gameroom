@@ -21,22 +21,23 @@ var broadcast = make(chan []byte)
 // Register blah
 func Register(w http.ResponseWriter, r *http.Request) {
 
-  err := RegisterMember("123")
-  if err != nil {
-    http.Error(w, err.Error(), 500)
-    return
-  }
-
-  // Open websocket!
   ws, err := upgrader.Upgrade(w, r, nil)
   if err != nil {
     http.Error(w, err.Error(), 500)
     return
   }
 
-  connection := CreateConnection(ws)
-  go connection.Writer()
-  connection.Reader(broadcast)
+  m, registerErr := RegisterMember("123", &Connection{
+    ws:       ws,
+    outbound: make(chan []byte, 256),
+  })
+
+  if registerErr != nil {
+    http.Error(w, registerErr.Error(), 500)
+    return
+  }
+
+  m.WS.Init(broadcast)
 }
 
 func main() {
@@ -55,7 +56,7 @@ func main() {
     for {
       select {
       case output := <-broadcast:
-        log.Println("OUTPUT", output)
+        log.Println("OUTPUT", string(output))
       }
     }
   }()

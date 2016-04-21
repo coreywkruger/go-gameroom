@@ -20,6 +20,12 @@ func CreateConnection(w *websocket.Conn) *Connection {
   }
 }
 
+// Init -
+func (c *Connection) Init(broadcast chan []byte) {
+  go c.Writer()
+  c.Reader(broadcast)
+}
+
 // Reader -
 func (c *Connection) Reader(input chan []byte) {
   for {
@@ -29,7 +35,6 @@ func (c *Connection) Reader(input chan []byte) {
       log.Println(err.Error())
       break
     }
-    log.Println(Bytes)
     input <- Bytes
   }
   c.ws.Close()
