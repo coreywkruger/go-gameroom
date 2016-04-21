@@ -1,27 +1,23 @@
 package main
 
 import (
-  "log"
-
   "github.com/gorilla/websocket"
+  "log"
 )
 
 // Connection contains websocket connnetion
 type Connection struct {
+  ID       int
   ws       *websocket.Conn
   outbound chan []byte
 }
 
-// CreateConnection -
-func CreateConnection(w *websocket.Conn) *Connection {
-  return &Connection{
-    ws:       w,
-    outbound: make(chan []byte, 256),
-  }
-}
-
 // Init -
 func (c *Connection) Init(broadcast chan []byte) {
+  // defer func() {
+  //   close(c.outbound)
+  //   broadcast <- []byte(strconv.Itoa(c.ID))
+  // }()
   go c.Writer()
   c.Reader(broadcast)
 }
@@ -43,6 +39,7 @@ func (c *Connection) Reader(input chan []byte) {
 // Writer -
 func (c *Connection) Writer() {
   for message := range c.outbound {
+    log.Println("broadcasting this: ", message)
     err := c.ws.WriteMessage(websocket.TextMessage, message)
     if err != nil {
       log.Println(err.Error())

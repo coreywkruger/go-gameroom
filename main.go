@@ -2,6 +2,7 @@ package main
 
 import (
   "log"
+  "math/rand"
   "net/http"
 
   "github.com/gorilla/mux"
@@ -27,7 +28,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  m, registerErr := RegisterMember("123", &Connection{
+  id := rand.Intn(10000)
+  m, registerErr := RegisterMember(id, &Connection{
+    ID:       id,
     ws:       ws,
     outbound: make(chan []byte, 256),
   })
@@ -57,6 +60,9 @@ func main() {
       select {
       case output := <-broadcast:
         log.Println("OUTPUT", string(output))
+        for _, member := range GetAllMembers() {
+          member.WS.outbound <- output
+        }
       }
     }
   }()
