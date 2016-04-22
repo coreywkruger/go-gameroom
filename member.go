@@ -9,16 +9,16 @@ var memberList = make(map[int]*Member)
 
 // Member -
 type Member struct {
-  ID int
-  WS *Connection
+  ID         int
+  Connection *Connection
 }
 
 // RegisterMember -
 func RegisterMember(id int, c *Connection) (*Member, error) {
   log.Println("registering ", id)
   memberList[id] = &Member{
-    ID: id,
-    WS: c,
+    ID:         id,
+    Connection: c,
   }
   log.Println(len(memberList))
   return memberList[id], nil

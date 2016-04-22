@@ -17,7 +17,7 @@ var upgrader = &websocket.Upgrader{
   },
 }
 
-var broadcast = make(chan []byte)
+var receive = make(chan []byte)
 
 // Register blah
 func Register(w http.ResponseWriter, r *http.Request) {
@@ -29,18 +29,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
   }
 
   id := rand.Intn(10000)
-  m, registerErr := RegisterMember(id, &Connection{
-    ID:       id,
-    ws:       ws,
-    outbound: make(chan []byte, 256),
+  m, regErr := RegisterMember(id, &Connection{
+    ID:      id,
+    ws:      ws,
+    send:    make(chan []byte, 256),
+    receive: &receive,
   })
 
-  if registerErr != nil {
-    http.Error(w, registerErr.Error(), 500)
+  if regErr != nil {
+    http.Error(w, regErr.Error(), 500)
     return
   }
 
-  m.WS.Init(broadcast)
+  m.Connection.Listen()
 }
 
 func main() {
@@ -55,17 +56,8 @@ func main() {
   // GET Join room
   r.HandleFunc("/register", Register)
 
-  go func() {
-    for {
-      select {
-      case output := <-broadcast:
-        log.Println("OUTPUT", string(output))
-        for _, member := range GetAllMembers() {
-          member.WS.outbound <- output
-        }
-      }
-    }
-  }()
+  room := Room{Broacast: receive}
+  room.Start(GetAllMembers())
 
   err := http.ListenAndServe(":3334", r)
 

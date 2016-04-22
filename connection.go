@@ -7,23 +7,20 @@ import (
 
 // Connection contains websocket connnetion
 type Connection struct {
-  ID       int
-  ws       *websocket.Conn
-  outbound chan []byte
+  ID      int
+  ws      *websocket.Conn
+  send    chan []byte
+  receive *chan []byte
 }
 
-// Init -
-func (c *Connection) Init(broadcast chan []byte) {
-  // defer func() {
-  //   close(c.outbound)
-  //   broadcast <- []byte(strconv.Itoa(c.ID))
-  // }()
+// Listen -
+func (c *Connection) Listen() {
   go c.Writer()
-  c.Reader(broadcast)
+  c.Reader()
 }
 
 // Reader -
-func (c *Connection) Reader(input chan []byte) {
+func (c *Connection) Reader() {
   for {
     _, Bytes, err := c.ws.ReadMessage()
 
@@ -31,15 +28,15 @@ func (c *Connection) Reader(input chan []byte) {
       log.Println(err.Error())
       break
     }
-    input <- Bytes
+    *c.receive <- Bytes
   }
   c.ws.Close()
 }
 
 // Writer -
 func (c *Connection) Writer() {
-  for message := range c.outbound {
-    log.Println("broadcasting this: ", message)
+  for message := range c.send {
+    log.Println("received this: ", message)
     err := c.ws.WriteMessage(websocket.TextMessage, message)
     if err != nil {
       log.Println(err.Error())
