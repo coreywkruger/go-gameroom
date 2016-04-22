@@ -28,7 +28,7 @@ func (c *Connection) Reader() {
   for {
     _, Message, err := c.ws.ReadMessage()
     if err != nil {
-      log.Println(err.Error())
+      log.Println("Couldn't Read:", err.Error())
       break
     }
     *c.receive <- Message
@@ -39,10 +39,9 @@ func (c *Connection) Reader() {
 // Writer - writes message to websocket
 func (c *Connection) Writer() {
   for message := range c.send {
-    log.Println("writing this: ", message)
     err := c.ws.WriteMessage(websocket.TextMessage, message)
     if err != nil {
-      log.Println(err.Error())
+      log.Println("Couldn't Write:", err.Error())
       break
     }
   }

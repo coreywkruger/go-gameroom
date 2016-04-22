@@ -21,7 +21,7 @@ func RegisterMember(id int, c *Connection) (*Member, error) {
     ID:         id,
     Connection: c,
   }
-  log.Println(len(memberList))
+  log.Println("# of members: ", len(memberList))
   return memberList[id], nil
 }
 
@@ -29,7 +29,7 @@ func RegisterMember(id int, c *Connection) (*Member, error) {
 func GetMember(id int) (*Member, error) {
   m := memberList[id]
   if m != nil {
-    log.Println("Found ", m.ID)
+    log.Println("Getting Member: ", m.ID)
     return m, nil
   }
   return nil, errors.New("Member not found")
