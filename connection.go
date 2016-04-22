@@ -5,16 +5,20 @@ import (
   "log"
 )
 
-// Connection contains websocket connnetion
+// Connection -
 type Connection struct {
   ID      int
   ws      *websocket.Conn
   send    chan []byte
   receive *chan []byte
+  closed  *chan int
 }
 
 // Listen -
 func (c *Connection) Listen() {
+  defer func() {
+    *c.closed <- c.ID
+  }()
   go c.Writer()
   c.Reader()
 }
@@ -44,4 +48,9 @@ func (c *Connection) Writer() {
     }
   }
   c.ws.Close()
+}
+
+// Kill -
+func (c *Connection) Kill() {
+  close(c.send)
 }

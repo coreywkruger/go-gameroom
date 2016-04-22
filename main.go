@@ -17,7 +17,11 @@ var upgrader = &websocket.Upgrader{
   },
 }
 
-var receive = make(chan []byte)
+// IncomingMessages -
+var IncomingMessages = make(chan []byte)
+
+// ConnectionClosed -
+var ConnectionClosed = make(chan int)
 
 // Register blah
 func Register(w http.ResponseWriter, r *http.Request) {
@@ -30,10 +34,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
   id := rand.Intn(10000)
   m, regErr := RegisterMember(id, &Connection{
-    ID:      id,
-    ws:      ws,
-    send:    make(chan []byte, 256),
-    receive: &receive,
+    ID:               id,
+    ws:               ws,
+    send:             make(chan []byte, 256),
+    receive:          &IncomingMessages,
+    ConnectionClosed: &ConnectionClosed,
   })
 
   if regErr != nil {
@@ -56,12 +61,27 @@ func main() {
   // GET Join room
   r.HandleFunc("/register", Register)
 
-  room := Room{Broacast: receive}
-  room.Start(GetAllMembers())
+  go broadcastMessages(IncomingMessages, ConnectionClosed, GetAllMembers())
 
   err := http.ListenAndServe(":3334", r)
 
   if err != nil {
     log.Fatal("ListenAndServe:", err)
+  }
+}
+
+func broadcastMessages(message chan []byte, ConnectionClosed chan int, members map[int]*Member) {
+  for {
+    select {
+    case broadcast := <-message:
+      log.Println("OUTPUT", string(broadcast))
+      for _, member := range members {
+        member.Connection.send <- broadcast
+      }
+    case id := <-ConnectionClosed:
+      log.Println("CLOSING", id)
+      members[id].Connection.Kill()
+      delete(members, id)
+    }
   }
 }
