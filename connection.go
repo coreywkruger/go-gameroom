@@ -14,7 +14,7 @@ type Connection struct {
   closed  *chan int
 }
 
-// Listen -
+// Listen - starts read and write loops
 func (c *Connection) Listen() {
   defer func() {
     *c.closed <- c.ID
@@ -23,24 +23,23 @@ func (c *Connection) Listen() {
   c.Reader()
 }
 
-// Reader -
+// Reader - reads message from websocket; puts in `receive` channel
 func (c *Connection) Reader() {
   for {
-    _, Bytes, err := c.ws.ReadMessage()
-
+    _, Message, err := c.ws.ReadMessage()
     if err != nil {
       log.Println(err.Error())
       break
     }
-    *c.receive <- Bytes
+    *c.receive <- Message
   }
   c.ws.Close()
 }
 
-// Writer -
+// Writer - writes message to websocket
 func (c *Connection) Writer() {
   for message := range c.send {
-    log.Println("received this: ", message)
+    log.Println("writing this: ", message)
     err := c.ws.WriteMessage(websocket.TextMessage, message)
     if err != nil {
       log.Println(err.Error())
@@ -50,7 +49,7 @@ func (c *Connection) Writer() {
   c.ws.Close()
 }
 
-// Kill -
+// Kill - closes channels
 func (c *Connection) Kill() {
   close(c.send)
 }

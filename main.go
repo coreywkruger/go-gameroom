@@ -17,13 +17,13 @@ var upgrader = &websocket.Upgrader{
   },
 }
 
-// IncomingMessages -
+// IncomingMessages - channel used for incoming messages from ws
 var IncomingMessages = make(chan []byte)
 
-// ConnectionClosed -
+// ConnectionClosed - channel used to signal a connection closing
 var ConnectionClosed = make(chan int)
 
-// Register blah
+// Register - registers new member & connection
 func Register(w http.ResponseWriter, r *http.Request) {
 
   ws, err := upgrader.Upgrade(w, r, nil)
@@ -34,11 +34,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
   id := rand.Intn(10000)
   m, regErr := RegisterMember(id, &Connection{
-    ID:               id,
-    ws:               ws,
-    send:             make(chan []byte, 256),
-    receive:          &IncomingMessages,
-    ConnectionClosed: &ConnectionClosed,
+    ID:      id,
+    ws:      ws,
+    send:    make(chan []byte, 256),
+    receive: &IncomingMessages,
+    closed:  &ConnectionClosed,
   })
 
   if regErr != nil {
@@ -61,7 +61,8 @@ func main() {
   // GET Join room
   r.HandleFunc("/register", Register)
 
-  go broadcastMessages(IncomingMessages, ConnectionClosed, GetAllMembers())
+  // listens for i/o from ws
+  go connectionLoop(IncomingMessages, ConnectionClosed, GetAllMembers())
 
   err := http.ListenAndServe(":3334", r)
 
@@ -70,15 +71,17 @@ func main() {
   }
 }
 
-func broadcastMessages(message chan []byte, ConnectionClosed chan int, members map[int]*Member) {
+func connectionLoop(message chan []byte, ConnectionClosed chan int, members map[int]*Member) {
   for {
     select {
     case broadcast := <-message:
+      // message received; broadcast to all connections
       log.Println("OUTPUT", string(broadcast))
       for _, member := range members {
         member.Connection.send <- broadcast
       }
     case id := <-ConnectionClosed:
+      // connection is signaling close; kill & delete connection
       log.Println("CLOSING", id)
       members[id].Connection.Kill()
       delete(members, id)

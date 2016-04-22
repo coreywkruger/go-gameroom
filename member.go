@@ -5,15 +5,16 @@ import (
   "log"
 )
 
+// list of all members
 var memberList = make(map[int]*Member)
 
-// Member -
+// Member - member of connection group
 type Member struct {
   ID         int
   Connection *Connection
 }
 
-// RegisterMember -
+// RegisterMember - creates new member
 func RegisterMember(id int, c *Connection) (*Member, error) {
   log.Println("registering ", id)
   memberList[id] = &Member{
@@ -24,7 +25,7 @@ func RegisterMember(id int, c *Connection) (*Member, error) {
   return memberList[id], nil
 }
 
-// GetMember -
+// GetMember - gets member by id
 func GetMember(id int) (*Member, error) {
   m := memberList[id]
   if m != nil {
@@ -34,7 +35,7 @@ func GetMember(id int) (*Member, error) {
   return nil, errors.New("Member not found")
 }
 
-// GetAllMembers -
+// GetAllMembers - gets all members
 func GetAllMembers() map[int]*Member {
   return memberList
 }
