@@ -16,11 +16,9 @@ type Connection struct {
 
 // Listen - starts read and write loops
 func (c *Connection) Listen() {
-  defer func() {
-    *c.closed <- c.ID
-  }()
   go c.Writer()
   c.Reader()
+  *c.closed <- c.ID
 }
 
 // Reader - reads message from websocket; puts in `receive` channel
