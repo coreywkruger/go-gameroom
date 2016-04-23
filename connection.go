@@ -9,19 +9,25 @@ import (
 type Connection struct {
 	ID      int
 	send    chan []byte
-	receive *chan []byte
+	receive *chan Message
 	closed  *chan int
+}
+
+// Message -
+type Message struct {
+	ID      int
+	message []byte
 }
 
 // Reader - reads message from websocket; puts in `receive` channel
 func (c *Connection) Reader(ws *websocket.Conn) {
 	for {
-		_, Message, err := ws.ReadMessage()
+		_, Msg, err := ws.ReadMessage()
 		if err != nil {
 			log.Println("Couldn't Read:", err.Error())
 			break
 		}
-		*c.receive <- Message
+		*c.receive <- Message{c.ID, Msg}
 	}
 	ws.Close()
 }

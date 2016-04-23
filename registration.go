@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"log"
-	"math/rand"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -17,27 +16,17 @@ var upgrader = &websocket.Upgrader{
 	},
 }
 
-// CreateRegistrationHandler - registers new member & connection
-func CreateRegistrationHandler(receiving chan []byte, closing chan int) http.HandlerFunc {
+// RegistrationHandler - registers new member & connection
+func RegistrationHandler(conn *Connection) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+
 		ws, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {
 			http.Error(writer, err.Error(), 500)
 			return
 		}
 
-		id := rand.Intn(10000)
-		conn, regErr := RegisterConnection(&Connection{
-			ID:      id,
-			send:    make(chan []byte, 256),
-			receive: &receiving,
-			closed:  &closing,
-		})
-
-		if regErr != nil {
-			http.Error(writer, regErr.Error(), 500)
-			return
-		}
+		_ = RegisterConnection(conn)
 
 		go conn.Writer(ws)
 		conn.Reader(ws)
@@ -49,11 +38,11 @@ func CreateRegistrationHandler(receiving chan []byte, closing chan int) http.Han
 var list = make(map[int]*Connection)
 
 // RegisterConnection - creates new member
-func RegisterConnection(c *Connection) (*Connection, error) {
+func RegisterConnection(c *Connection) error {
 	log.Println("registering ", c.ID)
 	list[c.ID] = c
 	log.Println("# of members: ", len(list))
-	return list[c.ID], nil
+	return nil
 }
 
 // GetConnection - gets member by id
@@ -67,6 +56,6 @@ func GetConnection(id int) (*Connection, error) {
 }
 
 // GetAllConnections - gets all members
-func GetAllConnections() map[int]*Connection {
-	return list
+func GetAllConnections() (map[int]*Connection, error) {
+	return list, nil
 }

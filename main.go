@@ -2,13 +2,17 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-var broadcastChannel = make(chan []byte)
-var closingChannel = make(chan int)
+// BroadcastCh -
+var BroadcastCh = make(chan Message)
+
+// ClosingCh -
+var ClosingCh = make(chan int)
 
 func main() {
 
@@ -18,20 +22,28 @@ func main() {
 	r.Headers("Access-Control-Allow-Headers", "Content-Type")
 	r.Headers("Content-Type", "application/json")
 	r.Headers("Content-Type", "text/plain")
-	r.HandleFunc("/register", CreateRegistrationHandler(broadcastChannel, closingChannel))
+	r.HandleFunc("/register", RegistrationHandler(&Connection{
+		ID:      rand.Intn(10000),
+		send:    make(chan []byte, 256),
+		receive: &BroadcastCh,
+		closed:  &ClosingCh,
+	}))
 
-	connections := GetAllConnections()
+	connections, _ := GetAllConnections()
+
 	// listens for i/o from ws
 	go func() {
 		for {
 			select {
-			case broadcast := <-broadcastChannel:
-				// broadcastChannel received; broadcast to all connections
-				log.Println("Broadcasting", string(broadcast))
+			case broadcast := <-BroadcastCh:
+				// BroadcastCh received; broadcast to all connections
+				log.Println("Broadcasting", string(broadcast.message))
 				for _, connection := range connections {
-					connection.send <- broadcast
+					if connection.ID != broadcast.ID {
+						connection.send <- broadcast.message
+					}
 				}
-			case id := <-closingChannel:
+			case id := <-ClosingCh:
 				// connection is signaling close; kill & delete connection
 				log.Println("Closing", id)
 				connections[id].Kill()
