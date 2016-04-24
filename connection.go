@@ -8,9 +8,8 @@ import (
 // Connection -
 type Connection struct {
 	ID      int
-	send    chan []byte
+	send    *chan []byte
 	receive *chan Message
-	closed  *chan int
 }
 
 // Message -
@@ -34,17 +33,12 @@ func (c *Connection) Reader(ws *websocket.Conn) {
 
 // Writer - writes message to websocket
 func (c *Connection) Writer(ws *websocket.Conn) {
-	for message := range c.send {
-		err := ws.WriteMessage(websocket.TextMessage, message)
+	for Msg := range *c.send {
+		err := ws.WriteMessage(websocket.TextMessage, Msg)
 		if err != nil {
 			log.Println("Couldn't Write:", err.Error())
 			break
 		}
 	}
 	ws.Close()
-}
-
-// Kill - closes channels
-func (c *Connection) Kill() {
-	close(c.send)
 }

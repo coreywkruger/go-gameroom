@@ -1,8 +1,8 @@
 package main
 
 import (
-	"errors"
 	"log"
+	"math/rand"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -17,8 +17,16 @@ var upgrader = &websocket.Upgrader{
 }
 
 // RegistrationHandler - registers new member & connection
-func RegistrationHandler(conn *Connection) http.HandlerFunc {
+func RegistrationHandler(brc *chan Message) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+
+		// make new connection
+		send := make(chan []byte, 256)
+		conn := &Connection{
+			ID:      rand.Intn(1000),
+			send:    &send,
+			receive: brc,
+		}
 
 		ws, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {
@@ -26,36 +34,36 @@ func RegistrationHandler(conn *Connection) http.HandlerFunc {
 			return
 		}
 
-		_ = RegisterConnection(conn)
+		// register new connection
+		_ = register(conn)
 
+		// read/write loops to websocket; read bocks until closed
 		go conn.Writer(ws)
 		conn.Reader(ws)
-		*conn.closed <- conn.ID
+
+		// remove connection when closed
+		remove(conn.ID)
 	}
 }
 
 // list of all members
 var list = make(map[int]*Connection)
 
-// RegisterConnection - creates new member
-func RegisterConnection(c *Connection) error {
-	log.Println("registering ", c.ID)
+// register - creates new member
+func register(c *Connection) error {
 	list[c.ID] = c
-	log.Println("# of members: ", len(list))
+	log.Println("registering:", c.ID, " # of connections: ", len(list))
 	return nil
-}
-
-// GetConnection - gets member by id
-func GetConnection(id int) (*Connection, error) {
-	m := list[id]
-	if m != nil {
-		log.Println("Getting Connection: ", m.ID)
-		return m, nil
-	}
-	return nil, errors.New("Connection not found")
 }
 
 // GetAllConnections - gets all members
 func GetAllConnections() (map[int]*Connection, error) {
 	return list, nil
+}
+
+// remove - deletes a connection from the list
+func remove(id int) error {
+	delete(list, id)
+	log.Println("removing:", id, " # of connections: ", len(list))
+	return nil
 }
