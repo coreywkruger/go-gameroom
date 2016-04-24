@@ -35,7 +35,7 @@ func RegistrationHandler(brc *chan Message) http.HandlerFunc {
 		}
 
 		// register new connection
-		_ = register(conn)
+		register(conn)
 
 		// read/write loops to websocket; read bocks until closed
 		go conn.Writer(ws)
