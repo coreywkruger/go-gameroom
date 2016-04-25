@@ -24,5 +24,5 @@ kill:
 	-@killall -9 $(PROG) 2>/dev/null || true
 
 run:
-	@make kill
+	@make kill;
 	@make build; (if [ "$$?" -eq 0 ]; then (./${PROG}); fi)
