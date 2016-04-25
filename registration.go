@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"log"
-	"math/rand"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -20,10 +20,13 @@ var upgrader = &websocket.Upgrader{
 func RegistrationHandler(brc *chan Message) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 
+		querystring := request.URL.Query()
+		id := querystring["id"][0]
+
 		// make new connection
 		send := make(chan []byte, 256)
 		conn := &Connection{
-			ID:      rand.Intn(1000),
+			ID:      id,
 			send:    &send,
 			receive: brc,
 		}
@@ -35,34 +38,41 @@ func RegistrationHandler(brc *chan Message) http.HandlerFunc {
 		}
 
 		// register new connection
-		register(conn)
+		err = register(conn)
+		if err != nil {
+			http.Error(writer, err.Error(), 500)
+			return
+		}
 
 		// read/write loops to websocket; read bocks until closed
 		go conn.Writer(ws)
 		conn.Reader(ws)
 
 		// remove connection when closed
-		remove(conn.ID)
+		_ = remove(conn.ID)
 	}
 }
 
 // list of all members
-var list = make(map[int]*Connection)
+var list = make(map[string]*Connection)
 
 // register - creates new member
 func register(c *Connection) error {
+	if list[c.ID] != nil {
+		return errors.New("id already in use")
+	}
 	list[c.ID] = c
 	log.Println("registering:", c.ID, " # of connections: ", len(list))
 	return nil
 }
 
 // GetAllConnections - gets all members
-func GetAllConnections() (map[int]*Connection, error) {
+func GetAllConnections() (map[string]*Connection, error) {
 	return list, nil
 }
 
 // remove - deletes a connection from the list
-func remove(id int) error {
+func remove(id string) error {
 	delete(list, id)
 	log.Println("removing:", id, " # of connections: ", len(list))
 	return nil

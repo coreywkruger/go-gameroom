@@ -7,14 +7,14 @@ import (
 
 // Connection -
 type Connection struct {
-	ID      int
+	ID      string
 	send    *chan []byte
 	receive *chan Message
 }
 
 // Message -
 type Message struct {
-	ID      int
+	ID      string
 	message []byte
 }
 
