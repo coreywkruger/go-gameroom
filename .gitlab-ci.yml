@@ -1,5 +1,6 @@
 before_script:
-  - echo "hello world"
+  - echo $DOCKER_EMAIL
+  - echo $DOCKER_USERNAME
 
 build_image:
   script:
