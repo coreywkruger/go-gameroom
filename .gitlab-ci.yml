@@ -1,12 +1,14 @@
-before_script:
-  - sudo docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
+# before_script:
+#   - sudo docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
 
 build_image:
   script:
+    - sudo docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
     - sudo docker stop gameroom_server
     - sudo docker rm -f coreykruger/gameroom:latest
     - sudo docker build -f Dockerfile -t coreykruger/gameroom .
 
 push_image:
   script:
+    - sudo docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
     - sudo docker push coreykruger/gameroom
