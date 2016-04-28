@@ -1,6 +1,7 @@
 before_script:
   - ls /usr/local/bin
   - echo $PATH
+  - curl -sSL https://get.docker.com/ | sh
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
 
 build_image:
