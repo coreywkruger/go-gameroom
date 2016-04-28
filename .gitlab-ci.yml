@@ -1,5 +1,6 @@
 before_script:
-  - ls /usr/bin
+  - ls /usr/local/bin
+  - echo $PATH
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
 
 build_image:
