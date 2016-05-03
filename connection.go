@@ -18,6 +18,27 @@ type Message struct {
 	message []byte
 }
 
+// ConnConfig -
+type ConnConfig struct {
+	send    *chan []byte
+	receive *chan Message
+}
+
+// NewConnection -
+func NewConnection(id string, cfg ConnConfig) *Connection {
+	send := cfg.send
+	if send == nil {
+		ch := make(chan []byte, 256)
+		send = &ch
+	}
+	receive := cfg.receive
+	if receive == nil {
+		ch := make(chan Message)
+		receive = &ch
+	}
+	return &Connection{id, send, receive}
+}
+
 // Reader - reads message from websocket; puts in `receive` channel
 func (c *Connection) Reader(ws *websocket.Conn) {
 	for {

@@ -23,19 +23,13 @@ func RegistrationHandler(brc *chan Message) http.HandlerFunc {
 		querystring := request.URL.Query()
 		id := querystring["id"][0]
 
-		// make new connection
-		send := make(chan []byte, 256)
-		conn := &Connection{
-			ID:      id,
-			send:    &send,
-			receive: brc,
-		}
-
 		ws, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {
 			http.Error(writer, err.Error(), 500)
 			return
 		}
+
+		conn := NewConnection(id, ConnConfig{receive: brc})
 
 		// register new connection
 		err = register(conn)
