@@ -20,15 +20,16 @@ var upgrader = &websocket.Upgrader{
 func RegistrationHandler(brc *chan Message) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 
-		querystring := request.URL.Query()
-		id := querystring["id"][0]
-
+		// websocket stuff
 		ws, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {
 			http.Error(writer, err.Error(), 500)
 			return
 		}
 
+		// get the id
+		id := request.URL.Query()["id"][0]
+		// create new connection struct
 		conn := NewConnection(id, ConnConfig{receive: brc})
 
 		// register new connection
@@ -39,8 +40,7 @@ func RegistrationHandler(brc *chan Message) http.HandlerFunc {
 		}
 
 		// read/write loops to websocket; read bocks until closed
-		go conn.Writer(ws)
-		conn.Reader(ws)
+		conn.Start(ws)
 
 		// remove connection when closed
 		_ = remove(conn.ID)

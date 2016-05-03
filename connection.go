@@ -10,6 +10,7 @@ type Connection struct {
 	ID      string
 	send    *chan []byte
 	receive *chan Message
+	kill    *chan bool
 }
 
 // Message -
@@ -36,7 +37,17 @@ func NewConnection(id string, cfg ConnConfig) *Connection {
 		ch := make(chan Message)
 		receive = &ch
 	}
-	return &Connection{id, send, receive}
+	kill := make(chan bool)
+	return &Connection{id, send, receive, &kill}
+}
+
+// Start -
+func (c *Connection) Start(ws *websocket.Conn) {
+	// read/write loops to websocket; read bocks until closed
+	go c.Writer(ws)
+	go c.Reader(ws)
+
+	<-*c.kill
 }
 
 // Reader - reads message from websocket; puts in `receive` channel
@@ -45,6 +56,7 @@ func (c *Connection) Reader(ws *websocket.Conn) {
 		_, Msg, err := ws.ReadMessage()
 		if err != nil {
 			log.Println("Couldn't Read:", err.Error())
+			*c.kill <- true
 			break
 		}
 		*c.receive <- Message{c.ID, Msg}
