@@ -16,58 +16,83 @@ var upgrader = &websocket.Upgrader{
 	},
 }
 
+var broadcastChannel = make(chan Message)
+
 // RegistrationHandler - registers new member & connection
-func RegistrationHandler(brc *chan Message) http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
+func RegistrationHandler(writer http.ResponseWriter, request *http.Request) {
 
-		// websocket stuff
-		ws, err := upgrader.Upgrade(writer, request, nil)
-		if err != nil {
-			http.Error(writer, err.Error(), 500)
-			return
-		}
+	// websocket stuff
+	ws, err := upgrader.Upgrade(writer, request, nil)
+	if err != nil {
+		http.Error(writer, err.Error(), 500)
+		return
+	}
 
-		// get the id
-		id := request.URL.Query()["id"][0]
-		// create new connection struct
-		conn := NewConnection(id, ConnConfig{receive: brc})
-
-		// register new connection
-		err = register(conn)
-		if err != nil {
-			http.Error(writer, err.Error(), 500)
-			return
-		}
-
-		// read/write loops to websocket; read bocks until closed
-		conn.Start(ws)
-
-		// remove connection when closed
-		_ = remove(conn.ID)
+	err = registerConnection(request.URL.Query()["id"][0], ws)
+	if err != nil {
+		http.Error(writer, err.Error(), 500)
+		return
 	}
 }
 
-// list of all members
-var list = make(map[string]*Connection)
+func registerConnection(id string, ws *websocket.Conn) error {
+	// create new connection struct
+	conn := NewConnection(id, ConnConfig{
+		receive: &broadcastChannel,
+	})
+
+	// register new connection
+	err := storeConnection(conn)
+	if err != nil {
+		return err
+	}
+	// read/write loops to websocket; read bocks until closed
+	conn.Start(ws)
+	// remove connection when closed
+	return remove(conn.ID)
+}
+
+// StartBroadcast -
+func StartBroadcast() {
+	// listens for i/o from ws
+	go func() {
+		for {
+			select {
+			case broadcast := <-broadcastChannel:
+				// broadcastChannel received; broadcast to all connections
+				connections, _ := GetAllConnections()
+				log.Println("Broadcasting", string(broadcast.message))
+				for _, connection := range connections {
+					if connection.ID != broadcast.ID {
+						*connection.send <- broadcast.message
+					}
+				}
+			}
+		}
+	}()
+}
+
+// ConnectionList of all members
+var ConnectionList = make(map[string]*Connection)
 
 // register - creates new member
-func register(c *Connection) error {
-	if list[c.ID] != nil {
+func storeConnection(c *Connection) error {
+	if ConnectionList[c.ID] != nil {
 		return errors.New("id already in use")
 	}
-	list[c.ID] = c
-	log.Println("registering:", c.ID, " # of connections: ", len(list))
+	ConnectionList[c.ID] = c
+	log.Println("registering:", c.ID, " # of connections: ", len(ConnectionList))
 	return nil
 }
 
 // GetAllConnections - gets all members
 func GetAllConnections() (map[string]*Connection, error) {
-	return list, nil
+	return ConnectionList, nil
 }
 
-// remove - deletes a connection from the list
+// remove - deletes a connection from the ConnectionList
 func remove(id string) error {
-	delete(list, id)
-	log.Println("removing:", id, " # of connections: ", len(list))
+	delete(ConnectionList, id)
+	log.Println("removing:", id, " # of connections: ", len(ConnectionList))
 	return nil
 }
