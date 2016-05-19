@@ -1,19 +1,20 @@
 image: docker:latest
 
-services:
-  - docker
-
 before_script:
   - echo "hello world"
   # - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
 
 build_image:
+  services:
+    - docker
   script:
     - docker stop gameroom_server
     - docker rm -f coreykruger/gameroom:latest
     - docker build -f Dockerfile -t coreykruger/gameroom .
 
 push_image:
+  services:
+    - docker
   script:
     - echo "done"
     # - docker push coreykruger/gameroom
