@@ -1,16 +1,13 @@
 before_script:
   - echo $DOCKER_EMAIL
-  - echo $DOCKER_USER
-  - echo $DOCKER_PASSWORD
+  - docker login -e $DOCKER_EMAIL -p $DOCKER_PASSWORD
 
 build_image:
   script:
-    - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
     - docker stop gameroom_server
     - docker rm -f coreykruger/gameroom:latest
     - docker build -f Dockerfile -t coreykruger/gameroom .
 
 push_image:
   script:
-    - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
     - docker push coreykruger/gameroom
