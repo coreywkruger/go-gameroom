@@ -1,4 +1,4 @@
-service:
+services:
   - echo "hello world+1"
   - docker:latest
 
