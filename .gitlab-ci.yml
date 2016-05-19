@@ -4,7 +4,7 @@ services:
   - docker
 
 before_script:
-  - docker login -e $DOCKER_EMAIL -p $DOCKER_PASSWORD
+  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
 
 build_image:
   script:
