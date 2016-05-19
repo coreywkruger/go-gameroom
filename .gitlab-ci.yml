@@ -1,5 +1,7 @@
+image: docker:latest
+
 services:
-  - docker:latest
+  - docker
 
 before_script:
   - docker login -e $DOCKER_EMAIL -p $DOCKER_PASSWORD
