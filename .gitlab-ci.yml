@@ -1,5 +1,8 @@
 before_script:
-  - echo $DOCKER_EMAIL
+  - ls /usr/local/bin
+  - echo $PATH
+  - curl -sSL https://get.docker.com/ | sh
+  - sudo usermod -aG docker your-user
   - docker login -e $DOCKER_EMAIL -p $DOCKER_PASSWORD
 
 build_image:
