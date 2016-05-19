@@ -1,5 +1,5 @@
 service:
-  - echo "hello world"
+  - echo "hello world+1"
   - docker:latest
 
 before_script:
