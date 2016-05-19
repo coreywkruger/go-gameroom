@@ -15,4 +15,5 @@ build_image:
 
 push_image:
   script:
+    - echo "done"
     # - docker push coreykruger/gameroom
