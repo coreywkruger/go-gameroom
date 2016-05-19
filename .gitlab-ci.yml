@@ -1,4 +1,5 @@
 service:
+  - echo "hello world"
   - docker:latest
 
 before_script:
