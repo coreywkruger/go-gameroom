@@ -7,6 +7,9 @@ before_script:
 
 build_image:
   script:
+    - echo $DOCKER_EMAIL
+    - echo $DOCKER_USER
+    - echo $DOCKER_PASSWORD
     - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASSWORD
     - docker stop gameroom_server
     - docker rm -f coreykruger/gameroom:latest
