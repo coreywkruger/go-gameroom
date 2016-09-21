@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  app:
+    command: /bin/bash /go/src/app/entrypoint.sh
+    build:
+      context: .
+      dockerfile: make.dockerfile
+    volumes:
+      - .:/go/src/app
+    ports:
+      - "3334:3334"

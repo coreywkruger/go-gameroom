@@ -1,6 +1,6 @@
 .PHONY: all test clean build install
 
-PROG = gameroom
+PROG = app
 GOFLAGS ?= $(GOFLAGS:)
 
 all: install test
