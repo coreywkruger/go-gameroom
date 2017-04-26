@@ -1,3 +1,3 @@
-#gameroom
+## Setup
 
-docker-compose run --service-ports app
+`docker-compose run --service-ports app`
